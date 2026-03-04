@@ -1,0 +1,107 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { listarProdutos } from "../../services/produtosService";
+
+export default function ProdutosDestaque() {
+  const [produtos, setProdutos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Função para corrigir URL da imagem
+  const formatImageUrl = (url) => {
+    if (!url) return "";
+    return url.replace("/media/", "/api/media/");
+  };
+
+  useEffect(() => {
+    async function carregarProdutos() {
+      try {
+        const data = await listarProdutos();
+        setProdutos(data.slice(0, 8));
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregarProdutos();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="w-full py-16 bg-neutral-100">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p className="text-neutral-600">Carregando produtos...</p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="w-full py-16 bg-neutral-100">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between items-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-neutral-800">
+            Produtos em Destaque
+          </h2>
+
+          <Link
+            to="/produtos"
+            className="text-orange-500 font-semibold hover:underline"
+          >
+            Ver todos
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {produtos.map((produto) => (
+            <div
+              key={produto.id}
+              className="bg-white rounded-xl shadow hover:shadow-lg transition p-4 flex flex-col"
+            >
+              <div className="w-full overflow-hidden rounded-lg mb-4">
+                <img
+                  src={formatImageUrl(produto.imagem)}
+                  alt={produto.descricao}
+                  className="w-full h-40 object-cover transition-transform duration-300 hover:scale-105"
+                />
+              </div>
+
+              <h3 className="text-sm font-semibold text-neutral-800 mb-1 line-clamp-2">
+                {produto.descricao}
+              </h3>
+
+              <p className="text-xs text-neutral-500 mb-2">
+                Código: {produto.codigo}
+              </p>
+
+              <p className="text-orange-500 text-lg font-bold mb-2">
+                {Number(produto.preco_com_iva).toLocaleString("pt-AO")} Kz
+              </p>
+
+              <span
+                className={`text-xs font-semibold px-2 py-1 rounded mb-4 w-fit ${
+                  produto.stock === "Disponível"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {produto.stock}
+              </span>
+
+              <Link
+                to={`/produtos/${produto.descricao
+                  .toLowerCase()
+                  .replaceAll(" ", "-")
+                  .replaceAll("/", "")}`}
+                className="mt-auto block text-center bg-orange-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 transition"
+              >
+                Ver produto
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
