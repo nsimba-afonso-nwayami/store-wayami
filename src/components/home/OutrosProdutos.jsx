@@ -21,9 +21,8 @@ export default function OutrosProdutos() {
       try {
         const data = await listarProdutos();
 
-        // aqui você pode decidir a regra:
-        // exemplo: pegar do 8 ao 16 para não repetir os destaques
-        setProdutos(data.slice(8, 16));
+        const produtosAleatorios = data.sort(() => Math.random() - 0.5);
+        setProdutos(produtosAleatorios.slice(0, 8));
       } catch (error) {
         console.error("Erro ao carregar outros produtos:", error);
       } finally {

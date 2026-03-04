@@ -14,12 +14,22 @@ export default function Produtos() {
   const formatImageUrl = (url) =>
     url ? url.replace("/media/", "/api/media/") : "";
 
+  function shuffleArray(array) {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  }
+
   // Carregar produtos da API
   useEffect(() => {
     async function carregarProdutos() {
       try {
         const data = await listarProdutos();
-        setProdutos(data);
+        const produtosAleatorios = shuffleArray(data);
+        setProdutos(produtosAleatorios);
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);
       } finally {

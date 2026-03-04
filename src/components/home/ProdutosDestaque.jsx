@@ -16,7 +16,10 @@ export default function ProdutosDestaque() {
     async function carregarProdutos() {
       try {
         const data = await listarProdutos();
-        setProdutos(data.slice(0, 8));
+        // Embaralhar produtos
+        const produtosAleatorios = data.sort(() => Math.random() - 0.5);
+        // Pegar apenas 8
+        setProdutos(produtosAleatorios.slice(0, 8));
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);
       } finally {
