@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listarProdutos } from "../../services/produtosService";
+import { useCart } from "../../contexts/CartContext";
 
 export default function ProdutosDestaque() {
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { addToCart } = useCart();
 
   // Função para corrigir URL da imagem
   const formatImageUrl = (url) => {
@@ -92,15 +95,32 @@ export default function ProdutosDestaque() {
                 {produto.stock}
               </span>
 
-              <Link
-                to={`/produtos/${produto.descricao
-                  .toLowerCase()
-                  .replaceAll(" ", "-")
-                  .replaceAll("/", "")}`}
-                className="mt-auto block text-center bg-orange-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 transition"
-              >
-                Ver produto
-              </Link>
+              <div className="mt-auto flex flex-col gap-2">
+                <button
+                  onClick={() =>
+                    addToCart({
+                      id: produto.id,
+                      descricao: produto.descricao,
+                      codigo: produto.codigo,
+                      preco_com_iva: Number(produto.preco_com_iva),
+                      imagem: produto.imagem,
+                    })
+                  }
+                  className="bg-neutral-900 cursor-pointer text-white py-2 rounded-lg text-sm font-semibold hover:bg-neutral-800 transition"
+                >
+                  Adicionar ao carrinho
+                </button>
+
+                <Link
+                  to={`/produtos/${produto.descricao
+                    .toLowerCase()
+                    .replaceAll(" ", "-")
+                    .replaceAll("/", "")}`}
+                  className="block text-center border border-orange-500 text-orange-500 py-2 rounded-lg text-sm font-semibold hover:bg-orange-500 hover:text-white transition"
+                >
+                  Ver produto
+                </Link>
+              </div>
             </div>
           ))}
         </div>

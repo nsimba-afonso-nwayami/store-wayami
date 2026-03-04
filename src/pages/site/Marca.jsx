@@ -1,9 +1,12 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { listarProdutos } from "../../services/produtosService";
+import { useCart } from "../../contexts/CartContext";
 
 export default function Marca() {
   const { nome } = useParams();
+
+  const { addToCart } = useCart();
 
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,15 +114,39 @@ export default function Marca() {
                   {produto.stock}
                 </span>
 
-                <Link
-                  to={`/produtos/${produto.descricao
-                    .toLowerCase()
-                    .replaceAll(" ", "-")
-                    .replaceAll("/", "")}`}
-                  className="mt-auto block text-center bg-orange-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 transition"
-                >
-                  Ver produto
-                </Link>
+                <div className="mt-auto flex flex-col gap-2">
+                  <button
+                    disabled={produto.stock !== "Disponível"}
+                    onClick={() =>
+                      addToCart({
+                        id: produto.id,
+                        descricao: produto.descricao,
+                        codigo: produto.codigo,
+                        preco_com_iva: Number(produto.preco_com_iva),
+                        imagem: produto.imagem,
+                      })
+                    }
+                    className={`py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
+                      produto.stock === "Disponível"
+                        ? "bg-neutral-900 text-white hover:bg-neutral-800"
+                        : "bg-neutral-400 text-white cursor-not-allowed"
+                    }`}
+                  >
+                    {produto.stock === "Disponível"
+                      ? "Adicionar ao carrinho"
+                      : "Indisponível"}
+                  </button>
+
+                  <Link
+                    to={`/produtos/${produto.descricao
+                      .toLowerCase()
+                      .replaceAll(" ", "-")
+                      .replaceAll("/", "")}`}
+                    className="block text-center border border-orange-500 text-orange-500 py-2 rounded-lg text-sm font-semibold hover:bg-orange-500 hover:text-white transition"
+                  >
+                    Ver produto
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
