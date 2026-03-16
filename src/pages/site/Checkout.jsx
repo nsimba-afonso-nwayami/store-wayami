@@ -42,7 +42,7 @@ export default function Checkout() {
 
   const aplicar25Porcento = (preco) => round2(Number(preco || 0) * 1.25);
   
-  const gerarProforma = (data) => {
+  /*const gerarProforma = (data) => {
     const doc = new jsPDF();
     const agora = new Date();
 
@@ -158,7 +158,186 @@ export default function Checkout() {
     doc.text("Documento informativo. Validade: 5 dias úteis.", 15, footerY + 10);
 
     doc.save(nomeArquivo);
-  };
+  };*/
+
+  const gerarProforma = (data) => {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4"
+  });
+
+  const agora = new Date();
+  
+  // 1. Nome do Arquivo: PROFORMA_CLIENTE_NWAYAMI_DD-MM-YYYY_HHMM.pdf
+  const dataEmissao = agora.toLocaleDateString("pt-AO");
+  const dataArquivo = dataEmissao.replaceAll("/", "-");
+  const horaArquivo = agora.getHours().toString().padStart(2, "0") + 
+                      agora.getMinutes().toString().padStart(2, "0");
+  
+  const nomeClienteLimpo = (data.nome || user?.username || "CLIENTE")
+    .split(" ")[0]
+    .toUpperCase();
+  
+  const nomeArquivo = `PROFORMA_${nomeClienteLimpo}_NWAYAMI_${dataArquivo}_${horaArquivo}.pdf`;
+  const dataVencimento = new Date(agora.getTime() + (5 * 24 * 60 * 60 * 1000)).toLocaleDateString("pt-AO");
+
+  // Configuração global de cor de desenho (Preto)
+  doc.setDrawColor(0, 0, 0);
+  doc.setTextColor(0, 0, 0);
+
+  // 2. Cabeçalho (Empresa e Logo)
+  try {
+    doc.addImage(logo, "JPEG", 15, 10, 25, 15); 
+  } catch (e) {
+    console.warn("Logo não carregado.");
+  }
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.text("N-WAYAMI STORE", 15, 30);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text([
+    "CENTRALIDADE DO KILAMBA,",
+    "QUARTEIRÃO F, EDIFÍCIO 27,",
+    "APARTAMENTO Nº91",
+    "Contribuinte: 5002061422",
+    "E-mail: geral@nwayami.com",
+    "Tel: 924054954"
+  ], 15, 34);
+
+  doc.text("Exmo.(s) Sr.(s)", 130, 30);
+  doc.setFont("helvetica", "bold");
+  doc.text(data.nome?.toUpperCase() || user?.username?.toUpperCase() || "CONSUMIDOR FINAL", 130, 35);
+
+  // 3. Título e Datas
+  doc.setFontSize(11);
+  doc.text("FATURA PROFORMA n.º", 15, 65);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("Original", 180, 65);
+  doc.setLineWidth(0.5);
+  doc.line(15, 68, 195, 68);
+
+  doc.setLineWidth(0.1);
+  doc.text("Data", 15, 73);
+  doc.text("Vencimento", 55, 73);
+  doc.text("Contribuinte", 120, 73);
+  doc.text("V/ Ref.", 165, 73);
+  doc.line(120, 74, 155, 74); 
+  doc.text(dataEmissao, 15, 78);
+  doc.text(dataVencimento, 55, 78);
+  doc.text("5002061422", 120, 78);
+
+  // 4. Observações
+  doc.setFont("helvetica", "bold");
+  doc.text("Observações", 15, 88);
+  doc.line(15, 89, 195, 89);
+  doc.text("NÃO É UM DOCUMENTO DE VENDA, INVÁLIDO PARA SAÍDA DE MERCADORIA", 15, 93);
+  doc.line(15, 94, 195, 94);
+
+  // 5. Tabela de Itens (Linhas Pretas entre produtos)
+  autoTable(doc, {
+    startY: 96,
+    head: [["Código", "Descrição", "P. Uni.", "Uni. Qtd.", "Taxa", "Total"]],
+    body: cartItems.map(item => {
+      const pUni = aplicar25Porcento(item.preco_com_iva);
+      return [
+        item.id.toString().slice(-4),
+        item.descricao.toUpperCase(),
+        pUni.toLocaleString("pt-AO") + " Kz",
+        item.quantidade,
+        "0 %",
+        (pUni * item.quantidade).toLocaleString("pt-AO") + " Kz"
+      ];
+    }),
+    theme: 'plain',
+    headStyles: { 
+      textColor: 0, 
+      fontStyle: 'bold', 
+      fontSize: 8,
+      lineWidth: { bottom: 0.1 },
+      lineColor: [0, 0, 0] // Linha preta no cabeçalho
+    },
+    styles: { 
+      fontSize: 8, 
+      cellPadding: 2, 
+      font: "helvetica", 
+      textColor: 0,
+      lineColor: [0, 0, 0] // Cor preta para as linhas
+    },
+    bodyStyles: {
+      lineWidth: { bottom: 0.1 } // Linha de separação preta entre cada produto
+    },
+    columnStyles: { 
+      2: { halign: 'right' }, 
+      3: { halign: 'center' }, 
+      4: { halign: 'center' }, 
+      5: { halign: 'right' } 
+    }
+  });
+
+  let currentY = doc.lastAutoTable.finalY + 15;
+
+  // 6. Bloco Acima da Linha (Pagamentos)
+  doc.setFont("helvetica", "bold");
+  doc.text("Meio de Pagamento", 15, currentY);
+  doc.line(15, currentY + 1, 95, currentY + 1);
+  doc.setFont("helvetica", "normal");
+  doc.text("Transferência Bancária", 15, currentY + 5);
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Dados Bancários", 15, currentY + 13);
+  doc.line(15, currentY + 14, 95, currentY + 14);
+  doc.text("NIB", 15, currentY + 18);
+  doc.text("IBAN", 15, currentY + 23);
+  doc.setFont("helvetica", "normal");
+  doc.text("BANCO BIC", 45, currentY + 18);
+  doc.text("0051 0000 2251 7229 1015 6", 45, currentY + 23);
+
+  // 7. LINHA DIVISÓRIA CENTRAL (Preta)
+  const linhaDivisoraY = currentY + 26;
+  doc.setLineWidth(0.3);
+  doc.line(15, linhaDivisoraY, 195, linhaDivisoraY); 
+
+  // 8. Bloco Abaixo da Linha (Resumo e Totais)
+  const resumoY = linhaDivisoraY + 5;
+  const resumoX = 120;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Taxa Base", resumoX, resumoY);
+  doc.text("IVA", resumoX + 35, resumoY);
+  doc.text("Sumário", resumoX + 48, resumoY);
+  
+  doc.setFont("helvetica", "normal");
+  doc.text(`S/IVA : ${totalPrice.toLocaleString("pt-AO")} Kz`, resumoX, resumoY + 5);
+  doc.text("IVA:", resumoX + 35, resumoY + 5);
+  doc.text("0 %", resumoX + 48, resumoY + 5);
+  doc.text(`${totalPrice.toLocaleString("pt-AO")} Kz`, 195, resumoY + 5, { align: 'right' });
+
+  // Linha final antes do Total
+  doc.setLineWidth(0.5);
+  doc.line(120, resumoY + 12, 195, resumoY + 12);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("Total", resumoX, resumoY + 18);
+  doc.text(`${totalPrice.toLocaleString("pt-AO")} Kz`, 195, resumoY + 18, { align: 'right' });
+
+  // 9. Rodapé
+  const footerY = 285;
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("N. WAYAMI STORE", 15, footerY);
+  doc.text("Tel. +244 924 054 954", 15, footerY + 3);
+  doc.text("Centralidade do Kilamba, Quarteirão F27, Apt n.91", 45, footerY);
+  doc.text("geral@nwayami.com", 45, footerY + 3);
+  doc.text("Município de Kilamba, Luanda, República de Angola", 110, footerY);
+  doc.text("www.store.nwayami.com", 110, footerY + 3);
+
+  doc.save(nomeArquivo);
+};
 
   const onSubmit = async (data) => {
     if (!isAuthenticated) {
