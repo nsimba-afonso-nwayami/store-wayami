@@ -1,4 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useEffect } from "react";
@@ -7,6 +9,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
 import { checkoutSchema } from "../../validations/checkoutSchema";
 import { criarPedido } from "../../services/pedidoService";
+import logo from "../../assets/img/logo.jpg";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -38,6 +41,124 @@ export default function Checkout() {
   const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
   const aplicar25Porcento = (preco) => round2(Number(preco || 0) * 1.25);
+  
+  const gerarProforma = (data) => {
+    const doc = new jsPDF();
+    const agora = new Date();
+
+    // 1. Datas e Nome do Arquivo
+    const dataEmissao = agora.toLocaleDateString("pt-AO");
+    const dataArquivo = dataEmissao.replaceAll("/", "-");
+    const horaArquivo = agora.getHours().toString().padStart(2, "0") + 
+                        agora.getMinutes().toString().padStart(2, "0");
+    
+    const nomeCliente = (data.nome || user?.username || "CLIENTE").split(" ")[0].toUpperCase();
+    const nomeArquivo = `PROFORMA_${nomeCliente}_NWAYAMI_${dataArquivo}_${horaArquivo}.pdf`;
+
+    // 2. Cores Nwayami
+    const orange500 = [244, 124, 32];
+    const neutral900 = [31, 31, 31];
+    const neutral600 = [107, 107, 107];
+    const neutral400 = [176, 176, 176];
+
+    // 3. Design: Barra Lateral
+    doc.setFillColor(orange500[0], orange500[1], orange500[2]);
+    doc.rect(0, 0, 5, 297, 'F');
+
+    // --- ADIÇÃO DO LOGOTIPO ---
+    // doc.addImage(imagem, formato, x, y, largura, altura)
+    try {
+      doc.addImage(logo, "JPEG", 15, 10, 25, 25); 
+    } catch (e) {
+      console.warn("Erro ao carregar o logotipo no PDF:", e);
+    }
+
+    // 4. Cabeçalho (Ajustado para não sobrepor o logo)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(neutral900[0], neutral900[1], neutral900[2]);
+    doc.text("NWAYAMI", 45, 22); // Movido para a direita (x=45) para dar espaço ao logo
+    
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(orange500[0], orange500[1], orange500[2]);
+    doc.text("SOLUÇÕES INDUSTRIAIS & VAREJO", 45, 28);
+
+    // Detalhes da Proforma (Lado Direito)
+    doc.setFontSize(14);
+    doc.setTextColor(neutral900[0], neutral900[1], neutral900[2]);
+    doc.text("FATURA PROFORMA", 140, 22);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(neutral600[0], neutral600[1], neutral600[2]);
+    doc.text(`Nº: PRF-${Date.now().toString().slice(-6)}`, 140, 28);
+    doc.text(`Emissão: ${dataEmissao}`, 140, 34);
+
+    // 5. Bloco do Cliente
+    doc.setDrawColor(neutral400[0], neutral400[1], neutral400[2]);
+    doc.line(15, 45, 195, 45);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(neutral900[0], neutral900[1], neutral900[2]);
+    doc.text("DADOS DO CLIENTE", 15, 55);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`${data.nome || user?.username || "Consumidor Final"}`, 15, 62);
+    doc.setTextColor(neutral600[0], neutral600[1], neutral600[2]);
+    doc.text(`Endereço: ${data.endereco}`, 15, 68);
+    if (data.referencia) doc.text(`Referência: ${data.referencia}`, 15, 74);
+
+    // 6. Tabela de Itens
+    const tableColumn = ["Descrição", "Qtd", "Preço Unitário", "Total"];
+    const tableRows = cartItems.map(item => {
+      const preco25 = aplicar25Porcento(item.preco_com_iva);
+      return [
+        item.descricao.toUpperCase(),
+        item.quantidade,
+        `${preco25.toLocaleString("pt-AO")} Kz`,
+        `${(preco25 * item.quantidade).toLocaleString("pt-AO")} Kz`
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 85,
+      head: [tableColumn],
+      body: tableRows,
+      theme: 'grid',
+      headStyles: { fillColor: neutral900, textColor: [255, 255, 255], fontSize: 10, halign: 'center' },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { halign: 'center' },
+        2: { halign: 'right' },
+        3: { halign: 'right', fontStyle: 'bold' }
+      },
+      styles: { font: "helvetica", fontSize: 9 },
+      alternateRowStyles: { fillColor: [250, 250, 250] }
+    });
+
+    // 7. Total
+    const finalY = doc.lastAutoTable?.finalY || 150;
+    doc.setFillColor(orange500[0], orange500[1], orange500[2]);
+    doc.rect(130, finalY + 5, 65, 12, 'F'); 
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`TOTAL: ${totalPrice.toLocaleString("pt-AO")} Kz`, 190, finalY + 13, { align: 'right' });
+
+    // 8. Rodapé
+    const footerY = 275;
+    doc.setDrawColor(neutral400[0], neutral400[1], neutral400[2]);
+    doc.line(15, footerY - 5, 195, footerY - 5);
+    doc.setFontSize(8);
+    doc.setTextColor(neutral600[0], neutral600[1], neutral600[2]);
+    doc.text("DADOS PARA PAGAMENTO:", 15, footerY);
+    doc.text("BANCO: BAI | IBAN: AO06 0000 0000 0000 0000 0 | NIF: 5000000000", 15, footerY + 5);
+    doc.text("Documento informativo. Validade: 5 dias úteis.", 15, footerY + 10);
+
+    doc.save(nomeArquivo);
+  };
 
   const onSubmit = async (data) => {
     if (!isAuthenticated) {
@@ -186,7 +307,7 @@ export default function Checkout() {
                     <textarea
                       rows="3"
                       {...register("instrucoes")}
-                      className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 ${
+                      className={`w-full resize-none border rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 ${
                         errors.instrucoes
                           ? "border-red-500"
                           : "border-neutral-400"
@@ -234,12 +355,22 @@ export default function Checkout() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-orange-500 text-neutral-50 py-3 rounded-lg font-semibold hover:bg-orange-600 transition cursor-pointer"
-              >
-                Confirmar Pedido
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={handleSubmit(gerarProforma)}
+                  className="w-full bg-neutral-800 text-white py-3 rounded-lg font-semibold hover:bg-neutral-900 transition cursor-pointer"
+                >
+                  Gerar Fatura Proforma
+                </button>
+
+                <button
+                  type="submit"
+                  className="w-full bg-orange-500 text-neutral-50 py-3 rounded-lg font-semibold hover:bg-orange-600 transition cursor-pointer"
+                >
+                  Confirmar Pedido
+                </button>
+              </div>
             </form>
 
             {/* RESUMO */}
