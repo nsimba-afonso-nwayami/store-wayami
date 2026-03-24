@@ -41,303 +41,326 @@ export default function Checkout() {
   const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
   const aplicar25Porcento = (preco) => round2(Number(preco || 0) * 1.25);
-  
-  /*const gerarProforma = (data) => {
-    const doc = new jsPDF();
-    const agora = new Date();
-
-    // 1. Datas e Nome do Arquivo
-    const dataEmissao = agora.toLocaleDateString("pt-AO");
-    const dataArquivo = dataEmissao.replaceAll("/", "-");
-    const horaArquivo = agora.getHours().toString().padStart(2, "0") + 
-                        agora.getMinutes().toString().padStart(2, "0");
-    
-    const nomeCliente = (data.nome || user?.username || "CLIENTE").split(" ")[0].toUpperCase();
-    const nomeArquivo = `PROFORMA_${nomeCliente}_NWAYAMI_${dataArquivo}_${horaArquivo}.pdf`;
-
-    // 2. Cores Nwayami
-    const orange500 = [244, 124, 32];
-    const neutral900 = [31, 31, 31];
-    const neutral600 = [107, 107, 107];
-    const neutral400 = [176, 176, 176];
-
-    // 3. Design: Barra Lateral
-    doc.setFillColor(orange500[0], orange500[1], orange500[2]);
-    doc.rect(0, 0, 5, 297, 'F');
-
-    // --- ADIÇÃO DO LOGOTIPO ---
-    // doc.addImage(imagem, formato, x, y, largura, altura)
-    try {
-      doc.addImage(logo, "JPEG", 15, 10, 25, 25); 
-    } catch (e) {
-      console.warn("Erro ao carregar o logotipo no PDF:", e);
-    }
-
-    // 4. Cabeçalho (Ajustado para não sobrepor o logo)
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.setTextColor(neutral900[0], neutral900[1], neutral900[2]);
-    doc.text("NWAYAMI", 45, 22); // Movido para a direita (x=45) para dar espaço ao logo
-    
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(orange500[0], orange500[1], orange500[2]);
-    doc.text("SOLUÇÕES INDUSTRIAIS & VAREJO", 45, 28);
-
-    // Detalhes da Proforma (Lado Direito)
-    doc.setFontSize(14);
-    doc.setTextColor(neutral900[0], neutral900[1], neutral900[2]);
-    doc.text("FATURA PROFORMA", 140, 22);
-    
-    doc.setFontSize(9);
-    doc.setTextColor(neutral600[0], neutral600[1], neutral600[2]);
-    doc.text(`Nº: PRF-${Date.now().toString().slice(-6)}`, 140, 28);
-    doc.text(`Emissão: ${dataEmissao}`, 140, 34);
-
-    // 5. Bloco do Cliente
-    doc.setDrawColor(neutral400[0], neutral400[1], neutral400[2]);
-    doc.line(15, 45, 195, 45);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(neutral900[0], neutral900[1], neutral900[2]);
-    doc.text("DADOS DO CLIENTE", 15, 55);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`${data.nome || user?.username || "Consumidor Final"}`, 15, 62);
-    doc.setTextColor(neutral600[0], neutral600[1], neutral600[2]);
-    doc.text(`Endereço: ${data.endereco}`, 15, 68);
-    if (data.referencia) doc.text(`Referência: ${data.referencia}`, 15, 74);
-
-    // 6. Tabela de Itens
-    const tableColumn = ["Descrição", "Qtd", "Preço Unitário", "Total"];
-    const tableRows = cartItems.map(item => {
-      const preco25 = aplicar25Porcento(item.preco_com_iva);
-      return [
-        item.descricao.toUpperCase(),
-        item.quantidade,
-        `${preco25.toLocaleString("pt-AO")} Kz`,
-        `${(preco25 * item.quantidade).toLocaleString("pt-AO")} Kz`
-      ];
-    });
-
-    autoTable(doc, {
-      startY: 85,
-      head: [tableColumn],
-      body: tableRows,
-      theme: 'grid',
-      headStyles: { fillColor: neutral900, textColor: [255, 255, 255], fontSize: 10, halign: 'center' },
-      columnStyles: {
-        0: { cellWidth: 80 },
-        1: { halign: 'center' },
-        2: { halign: 'right' },
-        3: { halign: 'right', fontStyle: 'bold' }
-      },
-      styles: { font: "helvetica", fontSize: 9 },
-      alternateRowStyles: { fillColor: [250, 250, 250] }
-    });
-
-    // 7. Total
-    const finalY = doc.lastAutoTable?.finalY || 150;
-    doc.setFillColor(orange500[0], orange500[1], orange500[2]);
-    doc.rect(130, finalY + 5, 65, 12, 'F'); 
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`TOTAL: ${totalPrice.toLocaleString("pt-AO")} Kz`, 190, finalY + 13, { align: 'right' });
-
-    // 8. Rodapé
-    const footerY = 275;
-    doc.setDrawColor(neutral400[0], neutral400[1], neutral400[2]);
-    doc.line(15, footerY - 5, 195, footerY - 5);
-    doc.setFontSize(8);
-    doc.setTextColor(neutral600[0], neutral600[1], neutral600[2]);
-    doc.text("DADOS PARA PAGAMENTO:", 15, footerY);
-    doc.text("BANCO: BAI | IBAN: AO06 0000 0000 0000 0000 0 | NIF: 5000000000", 15, footerY + 5);
-    doc.text("Documento informativo. Validade: 5 dias úteis.", 15, footerY + 10);
-
-    doc.save(nomeArquivo);
-  };*/
 
   const gerarProforma = (data) => {
-  const doc = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4"
-  });
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
 
-  const agora = new Date();
-  
-  // 1. Nome do Arquivo: PROFORMA_CLIENTE_NWAYAMI_DD-MM-YYYY_HHMM.pdf
-  const dataEmissao = agora.toLocaleDateString("pt-AO");
-  const dataArquivo = dataEmissao.replaceAll("/", "-");
-  const horaArquivo = agora.getHours().toString().padStart(2, "0") + 
-                      agora.getMinutes().toString().padStart(2, "0");
-  
-  const nomeClienteLimpo = (data.nome || user?.username || "CLIENTE")
-    .split(" ")[0]
-    .toUpperCase();
-  
-  const nomeArquivo = `PROFORMA_${nomeClienteLimpo}_NWAYAMI_${dataArquivo}_${horaArquivo}.pdf`;
-  const dataVencimento = new Date(agora.getTime() + (5 * 24 * 60 * 60 * 1000)).toLocaleDateString("pt-AO");
+    const agora = new Date();
 
-  // Configuração global de cor de desenho (Preto)
-  doc.setDrawColor(0, 0, 0);
-  doc.setTextColor(0, 0, 0);
+    const dataEmissao = agora.toLocaleDateString("pt-AO");
+    const dataArquivo = dataEmissao.replaceAll("/", "-");
+    const horaArquivo =
+      agora.getHours().toString().padStart(2, "0") +
+      agora.getMinutes().toString().padStart(2, "0");
 
-  // 2. Cabeçalho (Empresa e Logo)
-  try {
-    doc.addImage(logo, "JPEG", 15, 10, 25, 15); 
-  } catch (e) {
-    console.warn("Logo não carregado.");
-  }
+    const nomeClienteLimpo = (data.nome || user?.username || "CLIENTE")
+      .split(" ")[0]
+      .toUpperCase();
 
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.text("N-WAYAMI STORE", 15, 30);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.text([
-    "CENTRALIDADE DO KILAMBA,",
-    "QUARTEIRÃO F, EDIFÍCIO 27,",
-    "APARTAMENTO Nº91",
-    "Contribuinte: 5002061422",
-    "E-mail: geral@nwayami.com",
-    "Tel: 924054954"
-  ], 15, 34);
+    const nomeArquivo = `PROFORMA_${nomeClienteLimpo}_NWAYAMI_${dataArquivo}_${horaArquivo}.pdf`;
 
-  doc.text("Exmo.(s) Sr.(s)", 130, 30);
-  doc.setFont("helvetica", "bold");
-  doc.text(data.nome?.toUpperCase() || user?.username?.toUpperCase() || "CONSUMIDOR FINAL", 130, 35);
+    const dataVencimento = new Date(
+      agora.getTime() + 5 * 24 * 60 * 60 * 1000
+    ).toLocaleDateString("pt-AO");
 
-  // 3. Título e Datas
-  doc.setFontSize(11);
-  doc.text("FATURA PROFORMA n.º", 15, 65);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.text("Original", 180, 65);
-  doc.setLineWidth(0.5);
-  doc.line(15, 68, 195, 68);
+    // CONFIG GLOBAL
+    doc.setDrawColor(0, 0, 0);
+    doc.setTextColor(0, 0, 0);
 
-  doc.setLineWidth(0.1);
-  doc.text("Data", 15, 73);
-  doc.text("Vencimento", 55, 73);
-  doc.text("Contribuinte", 120, 73);
-  doc.text("V/ Ref.", 165, 73);
-  doc.line(120, 74, 155, 74); 
-  doc.text(dataEmissao, 15, 78);
-  doc.text(dataVencimento, 55, 78);
-  doc.text("5002061422", 120, 78);
+    // =========================
+    // LOGO
+    // =========================
+    try {
+      doc.addImage(logo, "JPEG", 15, 10, 22, 12);
+    } catch (e) {}
 
-  // 4. Observações
-  doc.setFont("helvetica", "bold");
-  doc.text("Observações", 15, 88);
-  doc.line(15, 89, 195, 89);
-  doc.text("NÃO É UM DOCUMENTO DE VENDA, INVÁLIDO PARA SAÍDA DE MERCADORIA", 15, 93);
-  doc.line(15, 94, 195, 94);
+    // =========================
+    // CABEÇALHO
+    // =========================
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("N-WAYAMI STORE", 15, 26);
 
-  // 5. Tabela de Itens (Linhas Pretas entre produtos)
-  autoTable(doc, {
-    startY: 96,
-    head: [["Código", "Descrição", "P. Uni.", "Uni. Qtd.", "Taxa", "Total"]],
-    body: cartItems.map(item => {
-      const pUni = aplicar25Porcento(item.preco_com_iva);
-      return [
-        item.id.toString().slice(-4),
-        item.descricao.toUpperCase(),
-        pUni.toLocaleString("pt-AO") + " Kz",
-        item.quantidade,
-        "0 %",
-        (pUni * item.quantidade).toLocaleString("pt-AO") + " Kz"
-      ];
-    }),
-    theme: 'plain',
-    headStyles: { 
-      textColor: 0, 
-      fontStyle: 'bold', 
-      fontSize: 8,
-      lineWidth: { bottom: 0.1 },
-      lineColor: [0, 0, 0] // Linha preta no cabeçalho
-    },
-    styles: { 
-      fontSize: 8, 
-      cellPadding: 2, 
-      font: "helvetica", 
-      textColor: 0,
-      lineColor: [0, 0, 0] // Cor preta para as linhas
-    },
-    bodyStyles: {
-      lineWidth: { bottom: 0.1 } // Linha de separação preta entre cada produto
-    },
-    columnStyles: { 
-      2: { halign: 'right' }, 
-      3: { halign: 'center' }, 
-      4: { halign: 'center' }, 
-      5: { halign: 'right' } 
-    }
-  });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.text(
+      [
+        "CENTRALIDADE DO KILAMBA,",
+        "QUARTEIRÃO F, EDIFÍCIO 27,",
+        "APARTAMENTO Nº91",
+        "Contribuinte: 5002061422",
+        "E-mail: geral@nwayami.com",
+        "Tel: 924054954"
+      ],
+      15,
+      30
+    );
 
-  let currentY = doc.lastAutoTable.finalY + 15;
+    // CLIENTE
+    doc.text("Exmo.(s) Sr.(s)", 140, 28);
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      data.nome?.toUpperCase() ||
+        user?.username?.toUpperCase() ||
+        "CONSUMIDOR FINAL",
+      140,
+      33
+    );
 
-  // 6. Bloco Acima da Linha (Pagamentos)
-  doc.setFont("helvetica", "bold");
-  doc.text("Meio de Pagamento", 15, currentY);
-  doc.line(15, currentY + 1, 95, currentY + 1);
-  doc.setFont("helvetica", "normal");
-  doc.text("Transferência Bancária", 15, currentY + 5);
+    // =========================
+    // TÍTULO
+    // =========================
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("FATURA PROFORMA n.º", 15, 58);
 
-  doc.setFont("helvetica", "bold");
-  doc.text("Dados Bancários", 15, currentY + 13);
-  doc.line(15, currentY + 14, 95, currentY + 14);
-  doc.text("NIB", 15, currentY + 18);
-  doc.text("IBAN", 15, currentY + 23);
-  doc.setFont("helvetica", "normal");
-  doc.text("BANCO BIC", 45, currentY + 18);
-  doc.text("0051 0000 2251 7229 1015 6", 45, currentY + 23);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text("Original", 180, 58);
 
-  // 7. LINHA DIVISÓRIA CENTRAL (Preta)
-  const linhaDivisoraY = currentY + 26;
-  doc.setLineWidth(0.3);
-  doc.line(15, linhaDivisoraY, 195, linhaDivisoraY); 
+    doc.setLineWidth(0.2);
+    doc.line(15, 61, 195, 61);
 
-  // 8. Bloco Abaixo da Linha (Resumo e Totais)
-  const resumoY = linhaDivisoraY + 5;
-  const resumoX = 120;
+    // =========================
+    // DATAS
+    // =========================
+    doc.setFontSize(7.5);
 
-  doc.setFont("helvetica", "bold");
-  doc.text("Taxa Base", resumoX, resumoY);
-  doc.text("IVA", resumoX + 35, resumoY);
-  doc.text("Sumário", resumoX + 48, resumoY);
-  
-  doc.setFont("helvetica", "normal");
-  doc.text(`S/IVA : ${totalPrice.toLocaleString("pt-AO")} Kz`, resumoX, resumoY + 5);
-  doc.text("IVA:", resumoX + 35, resumoY + 5);
-  doc.text("0 %", resumoX + 48, resumoY + 5);
-  doc.text(`${totalPrice.toLocaleString("pt-AO")} Kz`, 195, resumoY + 5, { align: 'right' });
+    doc.text("Data", 15, 66);
+    doc.text("Vencimento", 55, 66);
+    doc.text("Contribuinte", 120, 66);
+    doc.text("V/ Ref.", 165, 66);
 
-  // Linha final antes do Total
-  doc.setLineWidth(0.5);
-  doc.line(120, resumoY + 12, 195, resumoY + 12);
+    doc.line(120, 67, 155, 67);
 
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("Total", resumoX, resumoY + 18);
-  doc.text(`${totalPrice.toLocaleString("pt-AO")} Kz`, 195, resumoY + 18, { align: 'right' });
+    doc.text(dataEmissao, 15, 71);
+    doc.text(dataVencimento, 55, 71);
+    doc.text("5002061422", 120, 71);
 
-  // 9. Rodapé
-  const footerY = 285;
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.text("N. WAYAMI STORE", 15, footerY);
-  doc.text("Tel. +244 924 054 954", 15, footerY + 3);
-  doc.text("Centralidade do Kilamba, Quarteirão F27, Apt n.91", 45, footerY);
-  doc.text("geral@nwayami.com", 45, footerY + 3);
-  doc.text("Município de Kilamba, Luanda, República de Angola", 110, footerY);
-  doc.text("www.store.nwayami.com", 110, footerY + 3);
+    // =========================
+    // OBSERVAÇÕES
+    // =========================
+    doc.setFont("helvetica", "bold");
+    doc.text("Observações", 15, 80);
 
-  doc.save(nomeArquivo);
-};
+    doc.setLineWidth(0.1);
+    doc.line(15, 81, 195, 81);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      "NÃO É UM DOCUMENTO DE VENDA, INVÁLIDO PARA SAÍDA DE MERCADORIA",
+      15,
+      85
+    );
+
+    doc.line(15, 86, 195, 86);
+
+    // =========================
+    // TABELA
+    // =========================
+    autoTable(doc, {
+      startY: 88,
+      head: [["Código", "Descrição", "P. Uni.", "Uni. Qtd.", "Taxa", "Total"]],
+      body: cartItems.map((item) => {
+        const pUni = aplicar25Porcento(item.preco_com_iva);
+
+        return [
+          item.id.toString().slice(-4),
+          item.descricao.toUpperCase(),
+          `${pUni.toLocaleString("pt-AO")} Kz`,
+          item.quantidade,
+          "0 %",
+          `${(pUni * item.quantidade).toLocaleString("pt-AO")} Kz`
+        ];
+      }),
+      theme: "plain",
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 1.5,
+        textColor: 0
+      },
+      headStyles: {
+        fontStyle: "bold",
+        lineWidth: { bottom: 0.1 }
+      },
+      bodyStyles: {
+        lineWidth: { bottom: 0.1 }
+      },
+      columnStyles: {
+        2: { halign: "right" },
+        3: { halign: "center" },
+        4: { halign: "center" },
+        5: { halign: "right" }
+      }
+    });
+
+    // =========================
+    // REGIME / TAXA (FINAL)
+    // =========================
+    let currentY = doc.lastAutoTable.finalY + 10; // ↑ mais espaço da tabela
+
+    // linha curta com respiro
+    doc.setLineWidth(0.2);
+    doc.line(15, currentY - 4, 100, currentY - 4);
+
+    // textos
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+
+    // esquerda
+    doc.text("0 %", 15, currentY);
+
+    // valor MAIS À ESQUERDA (ajustado fino)
+    doc.text("0,00 Kz", 92, currentY);
+
+    // subtítulo
+    doc.setFontSize(7);
+    doc.text("(1) Regime Simplificado", 15, currentY + 4);
+
+    // =========================
+    // PAGAMENTO (ESQUERDA)
+    // =========================
+    const pagamentoY = currentY + 14;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+
+    doc.text("Meio de", 15, pagamentoY);
+    doc.text("Pagamento", 15, pagamentoY + 5);
+
+    // linha média
+    doc.setLineWidth(0.2);
+    doc.line(15, pagamentoY + 7, 100, pagamentoY + 7);
+
+    // conteúdo
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    doc.text("Transferência", 15, pagamentoY + 13);
+    doc.text("Bancária", 15, pagamentoY + 18);
+
+    // =========================
+    // DADOS BANCÁRIOS
+    // =========================
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+
+    doc.text("Dados Bancários", 15, pagamentoY + 28);
+
+    doc.setLineWidth(0.2);
+    doc.line(15, pagamentoY + 30, 100, pagamentoY + 30);
+
+    // labels
+    doc.text("NIB", 15, pagamentoY + 36);
+    doc.text("IBAN", 15, pagamentoY + 43);
+
+    // valores
+    doc.setFont("helvetica", "normal");
+
+    doc.text("BANCO BIC", 50, pagamentoY + 36);
+    doc.text("0051 0000 2251 7229 10156", 50, pagamentoY + 43);
+
+    // linha inferior curta
+    doc.line(15, pagamentoY + 46, 100, pagamentoY + 46);
+
+    // =========================
+    // LINHA GRANDE CENTRAL
+    // =========================
+    const linhaY = pagamentoY + 55;
+
+    doc.setLineWidth(0.4);
+    doc.line(15, linhaY, 195, linhaY);
+
+    // =========================
+    // RESUMO (DIREITA MAIS ABAIXO)
+    // =========================
+    const resumoX = 120;
+    const resumoY = linhaY + 12;
+
+    // topo (linha fina)
+    doc.setLineWidth(0.2);
+    doc.line(resumoX, resumoY - 4, 195, resumoY - 4);
+
+    // títulos
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+
+    doc.text("Taxa Base", resumoX, resumoY);
+    doc.text("IVA", resumoX + 32, resumoY);
+    doc.text("Sumário", resumoX + 50, resumoY);
+
+    // =========================
+    // CONTEÚDO
+    // =========================
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    // linha 1
+    doc.text(`S/IVA : ${totalPrice.toLocaleString("pt-AO")} Kz`, resumoX, resumoY + 7);
+    doc.text("IVA:", resumoX + 32, resumoY + 7);
+
+    // linha 2
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Descontos", resumoX, resumoY + 15);
+
+    doc.setFont("helvetica", "normal");
+    doc.text("%", resumoX + 32, resumoY + 15);
+
+    // linha final valores
+    doc.text("00,00 kz", resumoX, resumoY + 23);
+    doc.text("0", resumoX + 32, resumoY + 23);
+
+    doc.text(
+      `${totalPrice.toLocaleString("pt-AO")} kz`,
+      195,
+      resumoY + 23,
+      { align: "right" }
+    );
+
+    // linha inferior resumo
+    doc.setLineWidth(0.3);
+    doc.line(resumoX, resumoY + 27, 195, resumoY + 27);
+
+    // =========================
+    // TOTAL FINAL (MAIS AFASTADO)
+    // =========================
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+
+    doc.text("Total", resumoX, resumoY + 38);
+
+    // =========================
+    // RODAPÉ
+    // =========================
+    const footerY = 280;
+
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+
+    doc.text("N. WAYAMI STORE", 15, footerY);
+    doc.text("Tel. +244 924 054 954", 15, footerY + 3);
+
+    doc.text(
+      "Centralidade do Kilamba, Quarteirão F27, Apt n.91",
+      50,
+      footerY
+    );
+    doc.text("geral@nwayami.com", 50, footerY + 3);
+
+    doc.text(
+      "Município de Kilamba, Luanda, República de Angola",
+      120,
+      footerY
+    );
+    doc.text("www.store.nwayami.com", 120, footerY + 3);
+
+    // SALVAR
+    doc.save(nomeArquivo);
+  };
 
   const onSubmit = async (data) => {
     if (!isAuthenticated) {
